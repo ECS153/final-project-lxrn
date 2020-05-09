@@ -5,3 +5,7 @@
 - [**Proposal**](proposal.md)
 - [**Milestones**](milestones.md)
 - [**Design Docs**](design_docs.md)
+
+---
+
+[Link to this file](README.md)
