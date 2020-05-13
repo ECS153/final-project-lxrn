@@ -26,7 +26,7 @@
     1. Discussed proposal and design ideas for project
     2. Narrowing specifications, listing to-do items, dividing up items among team
     3. N/A (things I'm stuck on)
-    4. N/A (PRs/docs)
+    4. design doc on dead drops: https://drive.google.com/open?id=1IcOdwrLCkMLTloHzCs40QoAPKALc6yp9Idbgoxn7XNE
 
 5. [Video link](milestones.md) <!-- TODO: add in this link -->
 
