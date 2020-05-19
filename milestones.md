@@ -54,7 +54,7 @@
     1. Created functions to call for client POST and GET requests to server
     2. Continue to work on client-side, making sure input data coincides with what server is looking for
     3. N/A What I'm stuck on
-    4. PRs committed and/or design docs worked on
+    4. [PR#18](https://github.com/ECS153/final-project-lxrn/pull/18)
 
 5. [TODO: Video link](milestones.md)
 
