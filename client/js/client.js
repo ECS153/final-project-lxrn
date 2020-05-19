@@ -112,7 +112,7 @@ function deleteMsg()
     
     //temporary name and password for register
     //TODO: check if username is taken
-    var auth_token = "temp_auth_token"
+    var auth_token = "temp_auth_token";
     
     var jsonObj = 
     {
@@ -130,4 +130,35 @@ function deleteMsg()
     
     
     xhr.send(jsonObj);
+}
+
+/**
+    function to call when user wants to send a '/receive' GET request to server to receive a message
+**/
+function receive()
+{
+    var url = server_url+"v1/receive";
+    
+    
+    //temporary name and password for register
+    //TODO: check if username is taken
+    var auth_token = "temp_auth_token";
+    
+    var jsonObj = 
+    {
+        auth_token: auth_token
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", url);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(jsonString);
+    
+    xhr.onloadend = function(e) {
+         console.log(xhr.responseText);
+    }
+    
+    
+    xhr.send(jsonObj);
+    
 }
