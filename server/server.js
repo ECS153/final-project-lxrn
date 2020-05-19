@@ -23,6 +23,10 @@ const exists = fs.existsSync(dbFile);
 const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database(dbFile);
 
+///////////////////////////
+//  INITIALIZE DATABASE  //
+///////////////////////////
+
 // if ./.data/sqlite.db does not exist, create it
 db.serialize(() => {
   if (!exists) {
@@ -35,10 +39,20 @@ db.serialize(() => {
     db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT NOT NULL, expires TEXT NOT NULL CHECK(expires > datetime('now')))");
     console.log("New table Drops created!");
 
+    // DEBUGGING INITIALIZE DATABASE WITH SOME VALUES
+    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName', encrypt('testpw'));
+    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName2', encrypt('wptset'));
+    db.run("INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))", 'TestName', crypto.randomBytes(20).toString('hex'));
+    db.run("INSERT INTO Drops (src, dest, msg, sent, expires) VALUES (?, ?, ?, datetime('now'), datetime('now', '+1 month'))", 'TestName', 'TestName2', 'test message here');
+
   } else {
     console.log("Database ready to go!");
   }
 });
+
+/////////////////
+//  ENDPOINTS  //
+/////////////////
 
 // http://expressjs.com/en/starter/basic-routing.html
 app.get("/", (req, res) => {
@@ -75,8 +89,8 @@ app.post("/v1/login", (req, res) => {
         console.log("Found a match for username", cliUser, "in row", row);
 
         // check if passwords match
-        // TODO: handle encryption method
-        if (row.pw === cliPw) {
+
+        if (decrypt(row.pw) === cliPw) {
           let token = crypto.randomBytes(20).toString('hex');
           console.log("Passwords match; generated token:", token);
 
@@ -149,6 +163,28 @@ app.post("/v1/logout", (req, res) => {
 
   res.status(501).json({ error: 'under construction' });
 });
+
+/////////////////
+//  FUNCTIONS  //
+/////////////////
+
+function encrypt(text) { // example of crypto https://stackoverflow.com/a/60370205
+  let iv = crypto.randomBytes(16);
+  let cipher = crypto.createCipheriv('aes-256-ctr', Buffer.from(process.env.CRYPTO_CIPHER_KEY, 'hex'), iv);
+  let ctext = cipher.update(text);
+  ctext = Buffer.concat([ctext, cipher.final()]);
+  return iv.toString('hex') + ':' + ctext.toString('hex');
+}
+
+function decrypt(text) { // example of crypto https://stackoverflow.com/a/60370205
+  let textParts = text.split(':');
+  let iv = Buffer.from(textParts.shift(), 'hex');
+  let ctext = Buffer.from(textParts.join(':'), 'hex');
+  let decipher = crypto.createDecipheriv('aes-256-ctr', Buffer.from(process.env.CRYPTO_CIPHER_KEY, 'hex'), iv);
+  let ptext = decipher.update(ctext);
+  ptext = Buffer.concat([ptext, decipher.final()]);
+  return ptext.toString();
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
