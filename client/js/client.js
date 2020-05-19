@@ -113,8 +113,7 @@ function deleteMsg()
     var url = server_url+"v1/delete";
     
     
-    //temporary name and password for register
-    //TODO: check if username is taken
+    //TODO: actually get auth_token
     var auth_token = "temp_auth_token";
     
     var jsonObj = 
@@ -142,9 +141,7 @@ function receive()
 {
     var url = server_url+"v1/receive";
     
-    
-    //temporary name and password for register
-    //TODO: check if username is taken
+    //TODO: actually get auth_token
     var auth_token = "temp_auth_token";
     
     var jsonObj = 
