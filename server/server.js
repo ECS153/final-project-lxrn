@@ -6,6 +6,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 const fs = require("fs");
+const crypto = require("crypto");
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
@@ -45,10 +46,6 @@ app.get("/", (req, res) => {
   res.status(404).json({ error: 'empty endpoint' });
 });
 
-/* db example
-db.all("SELECT * from Table", (err, rows) => { response.send(JSON.stringify(rows)); });
-*/
-
 app.post("/v1/register", (req, res) => {
   // call to register a new account
   // req.body.username req.body.password
@@ -65,38 +62,48 @@ app.post("/v1/login", (req, res) => {
   const cliUser = req.body.username;
   const cliPw = req.body.password;
 
-  db.each(
-      "SELECT * from Users",
-      (err, row) => {
-        if (row.uname === cliUser) {
-          console.log("Found a match for username", cliUser);
 
-          // check if passwords match TODO: handle encryption methods
-          if (row.pw === cliPw) {
-            console.log("Password record matches as well");
+  let sql = "SELECT uname, pw FROM Users WHERE uname  = ?";
+  db.get(sql, [cliUser], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' }).end();
+      console.log("Respond 500 due to SELECT error:", err);
+      return;
 
-            // TODO: generate tokens & insert to table
-            let auth_token = "auth under construction";
+    } else {
+      if (row) {
+        console.log("Found a match for username", cliUser, "in row", row);
 
-            res.status(200).json({ auth_token: auth_token });
-            console.log("Returned 200 to client with token:", auth_token);
-          } else {
-            console.log("Password mismatch");
+        // check if passwords match
+        // TODO: handle encryption method
+        if (row.pw === cliPw) {
+          let token = crypto.randomBytes(20).toString('hex');
+          console.log("Passwords match; generated token:", token);
 
-            res.status(401).json({ error: 'username/password mismatch' });
-            console.log("Returned 401 to client with error: username/password mismatch");
-          }
+          let sql = "INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
+          db.run(sql, cliUser, token, error => {
+            if (error) {
+              res.status(500).json({ error: 'server error' });
+              console.log("Respond 500 due to INSERT error:", error.message);
+              return;
+
+            } else {
+              res.status(200).json({ auth_token: token });
+              console.log("Respond 200 with token:", token);
+              return;
+            }
+          });
+        } else {
+          res.status(401).json({ error: 'username/password mismatch' });
+          console.log("Respond 401 due to bad password");
+          return;
         }
-
-      },
-      err => {
-        if (err) {
-          console.log("Request encountered an error!");
-          // res.send({ message: "error!" });
-          res.status(500).json({ error: 'server error' });
-        }
+      } else {
+        res.status(401).json({ error: 'username/password mismatch' });
+        console.log("Respond 401 due to bad username");
       }
-    );
+    }
+  });
 });
 
 app.post("/v1/send", (req, res) => {
