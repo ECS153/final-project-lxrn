@@ -71,6 +71,7 @@ app.post("/v1/register", (req, res) => {
       res.status(401).json({ error: 'username taken' });
       console.log("Respond 401 due to taken username");
       return;
+
     } else {
       let token = crypto.randomBytes(20).toString('hex');
       console.log("User registered; generated token:", token);
@@ -137,11 +138,13 @@ app.post("/v1/login", (req, res) => {
               return;
             }
           });
+
         } else {
           res.status(401).json({ error: 'username/password mismatch' });
           console.log("Respond 401 due to bad password");
           return;
         }
+
       } else {
         res.status(401).json({ error: 'username/password mismatch' });
         console.log("Respond 401 due to bad username");
@@ -160,7 +163,7 @@ app.post("/v1/send", (req, res) => {
   let cliMsg = req.body.msg;
   let cliExp = req.body.expires;
 
-  if (!cliToken || !cliDest || !cliMsg || !cliExp) {
+  if (!cliToken || !cliDest || !cliMsg) {
     res.status(400).json({ error: 'missing parameters' });
     console.log("Respond 401 due to missing parameters");
     return;
@@ -189,24 +192,29 @@ app.post("/v1/send", (req, res) => {
 
           } else {
             if (row) {
-              // TODO: validate expiration
-
               if (cliExp) { // use the provided expiration
                 console.log("using cliExp", cliExp);
 
-                let sql = "INSERT INTO Drops (src, dest, msg, expires) VALUES (?, ?, ?, ?)";
-                db.run(sql, cliUser, cliDest, cliMsg, cliExp, error => {
-                  if (error) {
-                    res.status(500).json({ error: 'server error' });
-                    console.log("Respond 500 due to INSERT error:", error.message);
-                    return;
+                if (isValidDate(cliExp)) {
+                  let sql = "INSERT INTO Drops (src, dest, msg, expires) VALUES (?, ?, ?, ?)";
+                  db.run(sql, cliUser, cliDest, cliMsg, cliExp, error => {
+                    if (error) {
+                      res.status(500).json({ error: 'server error' });
+                      console.log("Respond 500 due to INSERT error:", error.message);
+                      return;
 
-                  } else {
-                    res.status(200).json({ confirmation: 'message dropped' });
-                    console.log("Respond 200 with confirmation of drop:");
-                    return;
-                  }
-                });
+                    } else {
+                      res.status(200).json({ confirmation: 'message dropped' });
+                      console.log("Respond 200 with confirmation of drop");
+                      return;
+                    }
+                  });
+
+                } else {
+                  res.status(400).json({ error: 'invalid expires' });
+                  console.log("Respond 400 due to bad expires");
+                  return;
+                }
 
               } else { // use default expiration
                 let sql = "INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)";
@@ -331,6 +339,7 @@ app.post("/v1/delete", (req, res) => {
             res.status(500).json({ error: 'server error' });
             console.log("Respond 500 due to DELETE error:", err.message);
             return;
+
           } else {
             res.status(200).json({ confirmation: 'messages deleted' });
             console.log("Respond 200 with confirmation of deletion");
@@ -415,6 +424,48 @@ function decrypt(text) { // example of crypto https://stackoverflow.com/a/603702
   ptext = Buffer.concat([ptext, decipher.final()]);
   return ptext.toString();
 }
+
+// Validates that the input string is a valid date formatted as YYYY-MM-DD HH:MM:SS
+// adapted from https://stackoverflow.com/questions/6177975/how-to-validate-date-with-format-mm-dd-yyyy-in-javascript
+function isValidDate(dateString) {
+  // First check for the pattern
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(dateString)) return false;
+
+  // Parse the date parts to integers
+  var parts = dateString.split(" ");
+
+  var dateParts = parts[0].split("-");
+  var year = parseInt(dateParts[0], 10);
+  var month = parseInt(dateParts[1], 10);
+  var day = parseInt(dateParts[2], 10);
+
+  var timeParts = parts[1].split(":");
+  var hour = parseInt(timeParts[0], 10);
+  var minute = parseInt(timeParts[1], 10);
+  var second = parseInt(timeParts[2], 10);
+
+  // Check the ranges of month and year
+  if (year < 1000 || year > 3000 || month == 0 || month > 12) return false;
+
+  var monthLength = [ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 ];
+
+  // Adjust for leap years
+  if (year % 400 == 0 || (year % 100 != 0 && year % 4 == 0)) monthLength[1] = 29;
+
+  // Check the range of the day
+  if (!(day > 0 && day <= monthLength[month - 1])) return false;
+
+  // Check the hour
+  if (!(hour >= 0 && hour < 24)) return false;
+
+  // Check the minute
+  if (!(minute >= 0 && minute < 60)) return false;
+
+  // Check the second
+  if (!(second >= 0 && second < 60)) return false;
+
+  return true;
+};
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
