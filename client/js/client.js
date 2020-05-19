@@ -31,3 +31,33 @@ function register()
     
     xhr.send(jsonObj);
 }
+
+function login()
+{
+    
+    var url = server_url+"v1/login";
+    
+    
+    //temporary name and password for login
+    var name = "temp_name";
+    var password = "temp_password";
+    
+    var jsonObj = 
+    {
+        username: name,
+        password: password
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(jsonString);
+    
+    xhr.onloadend = function(e) {
+         console.log(xhr.responseText);
+    }
+    
+    
+    xhr.send(jsonObj);
+}
+
