@@ -48,7 +48,7 @@
     1. Defined database structure and implemented creation; defined server endpoints and created skeleton; created step-by-step issues for project on [GitHub](https://github.com/ECS153/final-project-lxrn/issues)
     2. Continue work on server/back-end
     3. N/A (things I'm stuck on)
-    4. [Database Design](https://drive.google.com/open?id=1CwaiUK4NBgboTmCGACoL0nrbz92aiH9jH1Y0kP213aI), [Server Design](https://drive.google.com/open?id=1CCT0qwcj22Xd-gN1lyAWmXCmTvgSAgmGQEKaVYkR6Vc)
+    4. [Database Design](https://drive.google.com/open?id=1CwaiUK4NBgboTmCGACoL0nrbz92aiH9jH1Y0kP213aI), [Server Design](https://drive.google.com/open?id=1CCT0qwcj22Xd-gN1lyAWmXCmTvgSAgmGQEKaVYkR6Vc), [PR#16](https://github.com/ECS153/final-project-lxrn/pull/16)
 
 4. Jed Nugal
     1. What I did last week
