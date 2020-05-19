@@ -205,7 +205,7 @@ app.post("/v1/send", (req, res) => {
 
                   } else {
                     res.status(200).json({ confirmation: 'message dropped' });
-                    console.log("Respond 200 with confirmation of drop:");
+                    console.log("Respond 200 with confirmation of drop");
                     return;
                   }
                 });
@@ -249,16 +249,16 @@ app.get("/v1/receive", (req, res) => {
 
         // retrieve messages
         let sql = "SELECT src, msg, sent FROM Drops WHERE dest = ? AND expires > datetime('now')";
-        db.all(sql, [cliUser], (error, row) => {
+        db.all(sql, [cliUser], (error, rows) => {
           if (error) {
             res.status(500).json({ error: 'server error' });
             console.log("Respond 500 due to SELECT error:", error);
             return;
 
           } else {
-            if (row) {
-              res.status(200).json({ messages: row });
-              console.log("Respond 200 with messages", row);
+            if (rows) {
+              res.status(200).json({ messages: rows });
+              console.log("Respond 200 with messages", rows);
               return;
 
             } else {
@@ -286,17 +286,87 @@ app.get("/v1/receive", (req, res) => {
 app.post("/v1/delete", (req, res) => {
   // call to delete messages
   // req.body.auth_token, req.body.src, req.body.dest, req.body.sent
-  console.log("Received request to '/v1/delete': ", req);
+  console.log("Received request to '/v1/delete': ", req.body);
 
-  res.status(501).json({ error: 'under construction' });
+  let cliToken = req.body.auth_token;
+  let cliSrc = req.body.src;
+  let cliDest = req.body.dest;
+  let cliSent = req.body.sent;
+
+  // check authentication
+  let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now') AND uname = ?";
+  db.get(sql, [cliToken, cliDest], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' });
+      console.log("Respond 500 due to SELECT error:", err);
+      return;
+
+    } else {
+      if (row) {
+        console.log("User has been authenticated:", row.uname);
+
+        // delete messages
+        let sql = "DELETE FROM Drops WHERE src = ? AND dest = ? AND sent = ?";
+        db.run(sql, cliSrc, cliDest, cliSent, error => {
+          if (error) {
+            res.status(500).json({ error: 'server error' });
+            console.log("Respond 500 due to DELETE error:", err);
+            return;
+          } else {
+            res.status(200).json({ confirmation: 'messages deleted' });
+            console.log("Respond 200 with confirmation of deletion");
+            return;
+          }
+        });
+
+      } else {
+        res.status(401).json({ error: 'bad auth_token' });
+        console.log("Respond 401 due to bad auth_token");
+      }
+    }
+  });
 });
 
 app.post("/v1/logout", (req, res) => {
   // call to log out a user
   // req.body.auth_token, req.body.username
-  console.log("Received request to '/v1/logout': ", req);
+  console.log("Received request to '/v1/logout': ", req.body);
 
-  res.status(501).json({ error: 'under construction' });
+  let cliToken = req.body.auth_token;
+  let cliUser = req.body.username;
+
+  // check authentication
+  let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now') AND uname = ?";
+  db.get(sql, [cliToken, cliUser], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' });
+      console.log("Respond 500 due to SELECT error:", err);
+      return;
+
+    } else {
+      if (row) {
+        console.log("User has been authenticated:", row.uname);
+
+        let sql = "DELETE FROM Auth WHERE auth_token = ? AND uname = ?";
+        db.run(sql, cliToken, cliUser, error => {
+          if (error) {
+            res.status(500).json({ error: 'server error' });
+            console.log("Respond 500 due to DELETE error:", err);
+            return;
+
+          } else {
+            res.status(200).json({ confirmation: 'logged out' });
+            console.log("Respond 200 with confirmation of log out");
+            return;
+          }
+        });
+
+      } else {
+        res.status(401).json({ error: 'bad auth_token' });
+        console.log("Respond 401 due to bad auth_token");
+      }
+    }
+  });
 });
 
 /////////////////
