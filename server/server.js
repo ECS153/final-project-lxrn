@@ -230,13 +230,51 @@ app.post("/v1/send", (req, res) => {
 app.get("/v1/receive", (req, res) => {
   // call to receive messages for user with auth_token in field
   // req.body.auth_token
-  console.log("Received request to '/v1/receive': ", req);
+  console.log("Received request to '/v1/receive': ", req.body);
 
-  res.status(501).json({ error: 'under construction' });
+  let cliToken = req.body.auth_token;
 
-  // 1. check if auth_token is valid and get the corresponding username
+  // check authentication
+  let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now')";
+  db.get(sql, [cliToken], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' });
+      console.log("Respond 500 due to SELECT error:", err);
+      return;
 
-  // 2. find messages in the database for this user
+    } else {
+      if (row) {
+        let cliUser = row.uname;
+        console.log("User has been authenticated:", cliUser);
+
+        // retrieve messages
+        let sql = "SELECT src, msg, sent FROM Drops WHERE dest = ? AND expires > datetime('now')";
+        db.all(sql, [cliUser], (error, row) => {
+          if (error) {
+            res.status(500).json({ error: 'server error' });
+            console.log("Respond 500 due to SELECT error:", error);
+            return;
+
+          } else {
+            if (row) {
+              res.status(200).json({ messages: row });
+              console.log("Respond 200 with messages", row);
+              return;
+
+            } else {
+              res.status(200).json({ messages: 'none' });
+              console.log("Respond 200 no messages");
+              return;
+            }
+          }
+        });
+
+      } else {
+        res.status(401).json({ error: 'bad auth_token' });
+        console.log("Respond 401 due to bad auth_token");
+      }
+    }
+  });
 });
 
 // db.run(`DELETE FROM Dreams WHERE ID=?`, row.id, error => {
