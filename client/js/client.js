@@ -2,6 +2,9 @@
 
 const server_url = "https://project153-server.glitch.me/";
 
+/**
+    function to call when user wants to send a '/register' POST request to server to register for an account
+**/
 function register()
 {
     
@@ -32,6 +35,9 @@ function register()
     xhr.send(jsonObj);
 }
 
+/**
+    function to call when user wants to send a '/login' POST request to server to login to the app
+**/
 function login()
 {
     
@@ -62,6 +68,9 @@ function login()
     xhr.send(jsonObj);
 }
 
+/**
+    function to call when user wants to send a '/send' POST request to server to send a message
+**/
 function send()
 {
     
@@ -76,6 +85,38 @@ function send()
     {
         auth_token: auth_token,
         expiration: expiration
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(jsonString);
+    
+    xhr.onloadend = function(e) {
+         console.log(xhr.responseText);
+    }
+    
+    
+    xhr.send(jsonObj);
+}
+
+/** 
+    function to call when user wants to send a '/delete/ POST request to server to delete a message
+**/
+
+function deleteMsg()
+{
+    
+    var url = server_url+"v1/delete";
+    
+    
+    //temporary name and password for register
+    //TODO: check if username is taken
+    var auth_token = "temp_auth_token"
+    
+    var jsonObj = 
+    {
+        auth_token: auth_token
     }
     
     var xhr = new XMLHttpRequest();
