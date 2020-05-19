@@ -51,9 +51,9 @@
     4. [Database Design](https://drive.google.com/open?id=1CwaiUK4NBgboTmCGACoL0nrbz92aiH9jH1Y0kP213aI), [Server Design](https://drive.google.com/open?id=1CCT0qwcj22Xd-gN1lyAWmXCmTvgSAgmGQEKaVYkR6Vc), [PR#16](https://github.com/ECS153/final-project-lxrn/pull/16)
 
 4. Jed Nugal
-    1. What I did last week
-    2. What I'll do this week
-    3. What I'm stuck on
+    1. Created functions to call for client POST and GET requests to server
+    2. Continue to work on client-side, making sure input data coincides with what server is looking for
+    3. N/A What I'm stuck on
     4. PRs committed and/or design docs worked on
 
 5. [TODO: Video link](milestones.md)
