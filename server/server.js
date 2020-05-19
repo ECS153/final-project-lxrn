@@ -54,18 +54,39 @@ db.serialize(() => {
 //  ENDPOINTS  //
 /////////////////
 
-// http://expressjs.com/en/starter/basic-routing.html
-app.get("/", (req, res) => {
-  // default webpage delivery nothing here for us
-  res.status(404).json({ error: 'empty endpoint' });
-});
-
 app.post("/v1/register", (req, res) => {
   // call to register a new account
   // req.body.username req.body.password
-  console.log("Received request to '/v1/register': ", req);
+  console.log("Received request to '/v1/register': ", req.body);
 
-  res.status(501).json({ error: 'under construction' });
+  const cliUser = req.body.username;
+  const cliPw = req.body.password;
+
+  let sql = "INSERT INTO Users (uname, pw) VALUES (?, ?)";
+  db.run(sql, cliUser, encrypt(cliPw), err => {
+    if (err) {
+      res.status(401).json({ error: 'username taken' });
+      console.log("Respond 401 due to taken username");
+      return;
+    } else {
+      let token = crypto.randomBytes(20).toString('hex');
+      console.log("User registered; generated token:", token);
+
+      let sql = "INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
+      db.run(sql, cliUser, token, error => {
+        if (error) {
+          res.status(500).json({ error: 'server error' });
+          console.log("Respond 500 due to INSERT error:", error.message);
+          return;
+
+        } else {
+          res.status(200).json({ auth_token: token });
+          console.log("Respond 200 with token:", token);
+          return;
+        }
+      });
+    }
+  })
 });
 
 app.post("/v1/login", (req, res) => {
@@ -80,7 +101,7 @@ app.post("/v1/login", (req, res) => {
   let sql = "SELECT uname, pw FROM Users WHERE uname  = ?";
   db.get(sql, [cliUser], (err, row) => {
     if (err) {
-      res.status(500).json({ error: 'server error' }).end();
+      res.status(500).json({ error: 'server error' });
       console.log("Respond 500 due to SELECT error:", err);
       return;
 
