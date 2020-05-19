@@ -39,6 +39,7 @@ function login()
     
     
     //temporary name and password for login
+    //TODO: make dynamic through html/css
     var name = "temp_name";
     var password = "temp_password";
     
@@ -61,3 +62,31 @@ function login()
     xhr.send(jsonObj);
 }
 
+function send()
+{
+    
+    var url = server_url+"v1/send";
+    
+    
+    //TODO: make dynamic
+    var auth_token = "temp_auth_token";
+    var expiration = "temp_expiration";
+    
+    var jsonObj = 
+    {
+        auth_token: auth_token,
+        expiration: expiration
+    }
+    
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", url);
+    xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xhr.send(jsonString);
+    
+    xhr.onloadend = function(e) {
+         console.log(xhr.responseText);
+    }
+    
+    
+    xhr.send(jsonObj);
+}
