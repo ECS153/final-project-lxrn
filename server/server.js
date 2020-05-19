@@ -11,9 +11,6 @@ const crypto = require("crypto");
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
-// we've started you off with Express,
-// but feel free to use whatever libs or frameworks you'd like through `package.json`.
-
 // http://expressjs.com/en/starter/static-files.html
 app.use(express.static("public"));
 
@@ -27,7 +24,7 @@ const db = new sqlite3.Database(dbFile);
 //  INITIALIZE DATABASE  //
 ///////////////////////////
 
-// if ./.data/sqlite.db does not exist, create it
+// if ./.data/lxrnDB.db does not exist, create it
 db.serialize(() => {
   if (!exists) {
     db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)", error => { if (error) { console.log("User table failed", error.message); } else { console.log("User table created"); }});
@@ -61,6 +58,12 @@ app.post("/v1/register", (req, res) => {
 
   const cliUser = req.body.username;
   const cliPw = req.body.password;
+
+  if (!cliUser || !cliPw) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
 
   let sql = "INSERT INTO Users (uname, pw) VALUES (?, ?)";
   db.run(sql, cliUser, encrypt(cliPw), err => {
@@ -97,12 +100,17 @@ app.post("/v1/login", (req, res) => {
   const cliUser = req.body.username;
   const cliPw = req.body.password;
 
+  if (!cliUser || !cliPw) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
 
   let sql = "SELECT uname, pw FROM Users WHERE uname  = ?";
   db.get(sql, [cliUser], (err, row) => {
     if (err) {
       res.status(500).json({ error: 'server error' });
-      console.log("Respond 500 due to SELECT error:", err);
+      console.log("Respond 500 due to SELECT error:", err.message);
       return;
 
     } else {
@@ -110,7 +118,6 @@ app.post("/v1/login", (req, res) => {
         console.log("Found a match for username", cliUser, "in row", row);
 
         // check if passwords match
-
         if (decrypt(row.pw) === cliPw) {
           let token = crypto.randomBytes(20).toString('hex');
           console.log("Passwords match; generated token:", token);
@@ -153,12 +160,18 @@ app.post("/v1/send", (req, res) => {
   let cliMsg = req.body.msg;
   let cliExp = req.body.expires;
 
+  if (!cliToken || !cliDest || !cliMsg || !cliExp) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
+
   // check authentication
   let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now')";
   db.get(sql, [cliToken], (err, row) => {
     if (err) {
       res.status(500).json({ error: 'server error' });
-      console.log("Respond 500 due to SELECT error:", err);
+      console.log("Respond 500 due to SELECT error:", err.message);
       return;
 
     } else {
@@ -171,7 +184,7 @@ app.post("/v1/send", (req, res) => {
         db.get(sql, [cliDest], (error, row) => {
           if (error) {
             res.status(500).json({ error: 'server error' });
-            console.log("Respond 500 due to SELECT error:", error);
+            console.log("Respond 500 due to SELECT error:", error.message);
             return;
 
           } else {
@@ -234,12 +247,18 @@ app.get("/v1/receive", (req, res) => {
 
   let cliToken = req.body.auth_token;
 
+  if (!cliToken) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
+
   // check authentication
   let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now')";
   db.get(sql, [cliToken], (err, row) => {
     if (err) {
       res.status(500).json({ error: 'server error' });
-      console.log("Respond 500 due to SELECT error:", err);
+      console.log("Respond 500 due to SELECT error:", err.message);
       return;
 
     } else {
@@ -252,7 +271,7 @@ app.get("/v1/receive", (req, res) => {
         db.all(sql, [cliUser], (error, rows) => {
           if (error) {
             res.status(500).json({ error: 'server error' });
-            console.log("Respond 500 due to SELECT error:", error);
+            console.log("Respond 500 due to SELECT error:", error.message);
             return;
 
           } else {
@@ -277,12 +296,6 @@ app.get("/v1/receive", (req, res) => {
   });
 });
 
-// db.run(`DELETE FROM Dreams WHERE ID=?`, row.id, error => {
-//   if (row) {
-//     console.log(`deleted row ${row.id}`);
-//   }
-// });
-
 app.post("/v1/delete", (req, res) => {
   // call to delete messages
   // req.body.auth_token, req.body.src, req.body.dest, req.body.sent
@@ -293,12 +306,18 @@ app.post("/v1/delete", (req, res) => {
   let cliDest = req.body.dest;
   let cliSent = req.body.sent;
 
+  if (!cliToken || !cliSrc || !cliDest || !cliSent) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
+
   // check authentication
   let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now') AND uname = ?";
   db.get(sql, [cliToken, cliDest], (err, row) => {
     if (err) {
       res.status(500).json({ error: 'server error' });
-      console.log("Respond 500 due to SELECT error:", err);
+      console.log("Respond 500 due to SELECT error:", err.message);
       return;
 
     } else {
@@ -310,7 +329,7 @@ app.post("/v1/delete", (req, res) => {
         db.run(sql, cliSrc, cliDest, cliSent, error => {
           if (error) {
             res.status(500).json({ error: 'server error' });
-            console.log("Respond 500 due to DELETE error:", err);
+            console.log("Respond 500 due to DELETE error:", err.message);
             return;
           } else {
             res.status(200).json({ confirmation: 'messages deleted' });
@@ -335,12 +354,18 @@ app.post("/v1/logout", (req, res) => {
   let cliToken = req.body.auth_token;
   let cliUser = req.body.username;
 
+  if (!cliToken || !cliUser) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
+
   // check authentication
   let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now') AND uname = ?";
   db.get(sql, [cliToken, cliUser], (err, row) => {
     if (err) {
       res.status(500).json({ error: 'server error' });
-      console.log("Respond 500 due to SELECT error:", err);
+      console.log("Respond 500 due to SELECT error:", err.message);
       return;
 
     } else {
@@ -351,7 +376,7 @@ app.post("/v1/logout", (req, res) => {
         db.run(sql, cliToken, cliUser, error => {
           if (error) {
             res.status(500).json({ error: 'server error' });
-            console.log("Respond 500 due to DELETE error:", err);
+            console.log("Respond 500 due to DELETE error:", err.message);
             return;
 
           } else {
@@ -393,7 +418,7 @@ function decrypt(text) { // example of crypto https://stackoverflow.com/a/603702
 
 ////////////////////////////////////////////////////////////////////////////////////////
 
-// listen for requests :)
+// listen for requests
 var listener = app.listen(process.env.PORT, () => {
   console.log(`Your app is listening on port ${listener.address().port}`);
 });
