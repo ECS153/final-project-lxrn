@@ -29,10 +29,10 @@ db.serialize(() => {
     db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)");
     console.log("New table Users created!");
 
-    db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT NOT NULL)");
+    db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT NOT NULL CHECK(expires > datetime('now')))");
     console.log("New table Auth created!");
 
-    db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT NOT NULL, expires TEXT NOT NULL)");
+    db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT NOT NULL, expires TEXT NOT NULL CHECK(expires > datetime('now')))");
     console.log("New table Drops created!");
 
   } else {
@@ -80,7 +80,9 @@ app.post("/v1/login", (req, res) => {
           let token = crypto.randomBytes(20).toString('hex');
           console.log("Passwords match; generated token:", token);
 
-          let sql = "INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
+          // can only have one entry per username, insert if no current entry or replace existing
+          // give token one hour for a valid login (before users must relog)
+          let sql = "REPLACE INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
           db.run(sql, cliUser, token, error => {
             if (error) {
               res.status(500).json({ error: 'server error' });
