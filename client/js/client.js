@@ -1,3 +1,6 @@
+/** 
+    File contains the functions to call when client wants to send POST or GET requests: register(), send(), login(), deleteMsg(), receive()
+**/
 "use strict"
 
 const server_url = "https://project153-server.glitch.me/";
