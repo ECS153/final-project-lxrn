@@ -30,20 +30,20 @@ const db = new sqlite3.Database(dbFile);
 // if ./.data/sqlite.db does not exist, create it
 db.serialize(() => {
   if (!exists) {
-    db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)");
-    console.log("New table Users created!");
+    db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)", error => { if (error) { console.log("User table failed", error.message); } else { console.log("User table created"); }});
 
-    db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT NOT NULL CHECK(expires > datetime('now')))");
-    console.log("New table Auth created!");
+    db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT DEFAULT (datetime('now', '+1 hour')) NOT NULL CHECK(expires > datetime('now')))", error => { if (error) { console.log("Auth table failed", error.message); } else { console.log("Auth table created"); }});
 
-    db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT NOT NULL, expires TEXT NOT NULL CHECK(expires > datetime('now')))");
-    console.log("New table Drops created!");
+    db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT DEFAULT (datetime('now')) NOT NULL, expires TEXT DEFAULT (datetime('now', '+1 month')) NOT NULL CHECK(expires > datetime('now')))", error => { if (error) { console.log("Drops table failed", error.message); } else { console.log("Drops table created"); }});
 
     // DEBUGGING INITIALIZE DATABASE WITH SOME VALUES
-    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName', encrypt('testpw'));
-    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName2', encrypt('wptset'));
-    db.run("INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))", 'TestName', crypto.randomBytes(20).toString('hex'));
-    db.run("INSERT INTO Drops (src, dest, msg, sent, expires) VALUES (?, ?, ?, datetime('now'), datetime('now', '+1 month'))", 'TestName', 'TestName2', 'test message here');
+    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName', encrypt('testpw'), error => { if (error) { console.log("Debug1 failed", error.message); } else { console.log("Debug1 entered"); }});
+
+    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName2', encrypt('wptset'), error => { if (error) { console.log("Debug2 failed", error.message); } else { console.log("Debug2 entered"); }});
+
+    db.run("INSERT INTO Auth (uname, auth_token) VALUES (?, ?)", 'TestName', crypto.randomBytes(20).toString('hex'), error => { if (error) { console.log("Debug3 failed", error.message); } else { console.log("Debug3 entered"); }});
+
+    db.run("INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)", 'TestName', 'TestName2', 'test message here', error => { if (error) { console.log("Debug4 failed", error.message); } else { console.log("Debug4 entered"); }});
 
   } else {
     console.log("Database ready to go!");
@@ -72,7 +72,7 @@ app.post("/v1/register", (req, res) => {
       let token = crypto.randomBytes(20).toString('hex');
       console.log("User registered; generated token:", token);
 
-      let sql = "INSERT INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
+      let sql = "INSERT INTO Auth (uname, auth_token) VALUES (?, ?)";
       db.run(sql, cliUser, token, error => {
         if (error) {
           res.status(500).json({ error: 'server error' });
@@ -117,7 +117,7 @@ app.post("/v1/login", (req, res) => {
 
           // can only have one entry per username, insert if no current entry or replace existing
           // give token one hour for a valid login (before users must relog)
-          let sql = "REPLACE INTO Auth (uname, auth_token, expires) VALUES (?, ?, datetime('now', '+1 hour'))";
+          let sql = "REPLACE INTO Auth (uname, auth_token) VALUES (?, ?)";
           db.run(sql, cliUser, token, error => {
             if (error) {
               res.status(500).json({ error: 'server error' });
@@ -145,10 +145,86 @@ app.post("/v1/login", (req, res) => {
 
 app.post("/v1/send", (req, res) => {
   // call to send a message
-  // req.body.auth_token, req.body.msg, (optional)req.body.expiration
-  console.log("Received request to '/v1/send': ", req);
+  // req.body.auth_token, , req.body.dest, req.body.msg, (optional)req.body.expires
+  console.log("Received request to '/v1/send': ", req.body);
 
-  res.status(501).json({ error: 'under construction' });
+  let cliToken = req.body.auth_token;
+  let cliDest = req.body.dest;
+  let cliMsg = req.body.msg;
+  let cliExp = req.body.expires;
+
+  // check authentication
+  let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now')";
+  db.get(sql, [cliToken], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' });
+      console.log("Respond 500 due to SELECT error:", err);
+      return;
+
+    } else {
+      if (row) {
+        let cliUser = row.uname;
+        console.log("User has been authenticated:", cliUser);
+
+        // check destination
+        let sql = "SELECT uname FROM Users WHERE uname = ?";
+        db.get(sql, [cliDest], (error, row) => {
+          if (error) {
+            res.status(500).json({ error: 'server error' });
+            console.log("Respond 500 due to SELECT error:", error);
+            return;
+
+          } else {
+            if (row) {
+              // TODO: validate expiration
+
+              if (cliExp) { // use the provided expiration
+                console.log("using cliExp", cliExp);
+
+                let sql = "INSERT INTO Drops (src, dest, msg, expires) VALUES (?, ?, ?, ?)";
+                db.run(sql, cliUser, cliDest, cliMsg, cliExp, error => {
+                  if (error) {
+                    res.status(500).json({ error: 'server error' });
+                    console.log("Respond 500 due to INSERT error:", error.message);
+                    return;
+
+                  } else {
+                    res.status(200).json({ confirmation: 'message dropped' });
+                    console.log("Respond 200 with confirmation of drop:");
+                    return;
+                  }
+                });
+
+              } else { // use default expiration
+                let sql = "INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)";
+                db.run(sql, cliUser, cliDest, cliMsg, error => {
+                  if (error) {
+                    res.status(500).json({ error: 'server error' });
+                    console.log("Respond 500 due to INSERT error:", error.message);
+                    return;
+
+                  } else {
+                    res.status(200).json({ confirmation: 'message dropped' });
+                    console.log("Respond 200 with confirmation of drop:");
+                    return;
+                  }
+                });
+              }
+
+            } else {
+              res.status(400).json({ error: 'bad destination' });
+              console.log("Respond 400 due to bad destination");
+              return;
+            }
+          }
+        });
+
+      } else {
+        res.status(401).json({ error: 'bad auth_token' });
+        console.log("Respond 401 due to bad auth_token");
+      }
+    }
+  });
 });
 
 app.get("/v1/receive", (req, res) => {
