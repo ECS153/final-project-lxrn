@@ -39,9 +39,9 @@
     4. PRs committed and/or design docs worked on
 
 2. Haocheng Xue
-    1. What I did last week
-    2. What I'll do this week
-    3. What I'm stuck on
+    1. how to attack an encryption apart from brutal force. For example, what could attackers infer about the algorithm if both the text sent are seen (compromised) somehow?
+    2. Coding aspect of the attacking algorithms, such as known plaintext attack. 
+    3. add noise on the metadata- technical ways to monitor traffic (metadata).
     4. PRs committed and/or design docs worked on
 
 3. Brody Reeves
