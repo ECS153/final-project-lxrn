@@ -460,6 +460,11 @@ function decrypt(text) { // example of crypto https://stackoverflow.com/a/603702
 }
 
 // https://stackoverflow.com/questions/8750780/encrypting-data-with-public-key-in-node-js/53650554#53650554
+
+// let plain = { a: 'a', b: 'b' }; // i.e. response.body content
+// let enc = publicEncrypt(JSON.stringify(plain)); // client would call this
+// let dec = JSON.parse(privateDecrypt(enc)); // server would call this on the incoming request.body
+
 function publicEncrypt(text) {
   const buffer = Buffer.from(text, 'utf8');
   const ctext = crypto.publicEncrypt(keyPair.publicKey, buffer);
