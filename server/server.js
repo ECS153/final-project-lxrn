@@ -47,6 +47,31 @@ db.serialize(() => {
   }
 });
 
+///////////////////////
+//  ENCRYPTION KEYS  //
+///////////////////////
+
+// https://nodejs.org/api/crypto.html#crypto_crypto_generatekeypair_type_options_callback
+// synchronous call to get values when expected
+const keyPair = crypto.generateKeyPairSync('rsa', {
+  modulusLength: 4096,
+  publicKeyEncoding: {
+    type: 'spki',
+    format: 'pem'
+  },
+  privateKeyEncoding: {
+    type: 'pkcs8',
+    format: 'pem',
+    cipher: 'aes-256-cbc',
+    passphrase: process.env.CRYPTO_CIPHER_KEY,
+  }
+}, (err, publicKey, privateKey) => {
+  // Handle errors and use the generated key pair.
+  if (err) {
+    console.log("Key generation error:", err.message)
+  }
+});
+
 /////////////////
 //  ENDPOINTS  //
 /////////////////
@@ -403,6 +428,15 @@ app.post("/v1/logout", (req, res) => {
   });
 });
 
+app.get("/v1/fetchkey", (req, res) => {
+  // call to retrieve public key
+  console.log("Received request to '/v1/fetchkey': ", req.body);
+
+  res.status(200).json( {publicKey: keyPair.publicKey });
+  console.log("Respond 200 with key attached");
+  return;
+});
+
 /////////////////
 //  FUNCTIONS  //
 /////////////////
@@ -423,6 +457,25 @@ function decrypt(text) { // example of crypto https://stackoverflow.com/a/603702
   let ptext = decipher.update(ctext);
   ptext = Buffer.concat([ptext, decipher.final()]);
   return ptext.toString();
+}
+
+// https://stackoverflow.com/questions/8750780/encrypting-data-with-public-key-in-node-js/53650554#53650554
+function publicEncrypt(text) {
+  const buffer = Buffer.from(text, 'utf8');
+  const ctext = crypto.publicEncrypt(keyPair.publicKey, buffer);
+  return ctext.toString('base64');
+}
+
+function privateDecrypt(text) {
+  const buffer = Buffer.from(text, 'base64');
+  const ptext = crypto.privateDecrypt(
+    {
+      key: keyPair.privateKey,
+      passphrase: process.env.CRYPTO_CIPHER_KEY,
+    },
+    buffer,
+  );
+  return ptext.toString('utf8')
 }
 
 // Validates that the input string is a valid date formatted as YYYY-MM-DD HH:MM:SS
