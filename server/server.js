@@ -27,6 +27,7 @@ const db = new sqlite3.Database(dbFile);
 // if ./.data/lxrnDB.db does not exist, create it
 db.serialize(() => {
   if (!exists) {
+    // Create tables, log errors if any occur
     db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)", error => { if (error) { console.log("User table failed", error.message); } else { console.log("User table created"); }});
 
     db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT DEFAULT (datetime('now', '+1 hour')) NOT NULL CHECK(expires > datetime('now')))", error => { if (error) { console.log("Auth table failed", error.message); } else { console.log("Auth table created"); }});
@@ -40,7 +41,7 @@ db.serialize(() => {
 
     db.run("INSERT INTO Auth (uname, auth_token) VALUES (?, ?)", 'TestName', crypto.randomBytes(20).toString('hex'), error => { if (error) { console.log("Debug3 failed", error.message); } else { console.log("Debug3 entered"); }});
 
-    db.run("INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)", 'TestName', 'TestName2', 'test message here', error => { if (error) { console.log("Debug4 failed", error.message); } else { console.log("Debug4 entered"); }});
+    db.run("INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)", 'TestName', 'TestName2', encrypt('test message here'), error => { if (error) { console.log("Debug4 failed", error.message); } else { console.log("Debug4 entered"); }});
 
   } else {
     console.log("Database ready to go!");
@@ -79,6 +80,9 @@ const keyPair = crypto.generateKeyPairSync('rsa', {
 app.post("/v1/register", (req, res) => {
   // call to register a new account
   // req.body.username req.body.password
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/register': ", req.body);
 
   const cliUser = req.body.username;
@@ -90,6 +94,7 @@ app.post("/v1/register", (req, res) => {
     return;
   }
 
+  // always store passwords as encrypted strings
   let sql = "INSERT INTO Users (uname, pw) VALUES (?, ?)";
   db.run(sql, cliUser, encrypt(cliPw), err => {
     if (err) {
@@ -121,6 +126,9 @@ app.post("/v1/register", (req, res) => {
 app.post("/v1/login", (req, res) => {
   // call to log into an account
   // req.body.username req.body.password
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/login': ", req.body);
 
   const cliUser = req.body.username;
@@ -181,11 +189,14 @@ app.post("/v1/login", (req, res) => {
 app.post("/v1/send", (req, res) => {
   // call to send a message
   // req.body.auth_token, , req.body.dest, req.body.msg, (optional)req.body.expires
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/send': ", req.body);
 
   let cliToken = req.body.auth_token;
   let cliDest = req.body.dest;
-  let cliMsg = req.body.msg;
+  let cliMsg = encrypt(req.body.msg); // store messages as encrypted strings
   let cliExp = req.body.expires;
 
   if (!cliToken || !cliDest || !cliMsg) {
@@ -276,6 +287,9 @@ app.post("/v1/send", (req, res) => {
 app.get("/v1/receive", (req, res) => {
   // call to receive messages for user with auth_token in field
   // req.body.auth_token
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/receive': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -309,6 +323,11 @@ app.get("/v1/receive", (req, res) => {
 
           } else {
             if (rows) {
+              // decrypt messages before responding
+              rows.forEach(row => {
+                row.msg = decrypt(row.msg);
+              });
+
               res.status(200).json({ messages: rows });
               console.log("Respond 200 with messages", rows);
               return;
@@ -332,6 +351,9 @@ app.get("/v1/receive", (req, res) => {
 app.post("/v1/delete", (req, res) => {
   // call to delete messages
   // req.body.auth_token, req.body.src, req.body.dest, req.body.sent
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/delete': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -383,6 +405,9 @@ app.post("/v1/delete", (req, res) => {
 app.post("/v1/logout", (req, res) => {
   // call to log out a user
   // req.body.auth_token, req.body.username
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/logout': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -430,6 +455,9 @@ app.post("/v1/logout", (req, res) => {
 
 app.get("/v1/fetchkey", (req, res) => {
   // call to retrieve public key
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/fetchkey': ", req.body);
 
   res.status(200).json( {publicKey: keyPair.publicKey });
@@ -461,9 +489,9 @@ function decrypt(text) { // example of crypto https://stackoverflow.com/a/603702
 
 // https://stackoverflow.com/questions/8750780/encrypting-data-with-public-key-in-node-js/53650554#53650554
 
-// let plain = { a: 'a', b: 'b' }; // i.e. response.body content
-// let enc = publicEncrypt(JSON.stringify(plain)); // client would call this
-// let dec = JSON.parse(privateDecrypt(enc)); // server would call this on the incoming request.body
+// let plainObject = { a: 'a', b: 'b' }; // i.e. response.body content
+// let encryptedString = publicEncrypt(JSON.stringify(plain)); // client would call this
+// let decryptedObject = JSON.parse(privateDecrypt(enc)); // server would call this on the incoming request.body
 
 function publicEncrypt(text) {
   const buffer = Buffer.from(text, 'utf8');
