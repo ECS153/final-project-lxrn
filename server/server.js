@@ -28,20 +28,20 @@ const db = new sqlite3.Database(dbFile);
 db.serialize(() => {
   if (!exists) {
     // Create tables, log errors if any occur
-    db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL)", error => { if (error) { console.log("User table failed", error.message); } else { console.log("User table created"); }});
+    db.run("CREATE TABLE Users (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, pw TEXT NOT NULL, key TEXT NOT NULL)", error => { if (error) { console.log("User table failed", error.message); } else { console.log("User table created"); }});
 
     db.run("CREATE TABLE Auth (id INTEGER PRIMARY KEY AUTOINCREMENT, uname TEXT NOT NULL UNIQUE, auth_token TEXT NOT NULL, expires TEXT DEFAULT (datetime('now', '+1 hour')) NOT NULL CHECK(expires > datetime('now')))", error => { if (error) { console.log("Auth table failed", error.message); } else { console.log("Auth table created"); }});
 
     db.run("CREATE TABLE Drops (id INTEGER PRIMARY KEY AUTOINCREMENT, src TEXT NOT NULL, dest TEXT NOT NULL, msg TEXT NOT NULL, sent TEXT DEFAULT (datetime('now')) NOT NULL, expires TEXT DEFAULT (datetime('now', '+1 month')) NOT NULL CHECK(expires > datetime('now')))", error => { if (error) { console.log("Drops table failed", error.message); } else { console.log("Drops table created"); }});
 
     // DEBUGGING INITIALIZE DATABASE WITH SOME VALUES
-    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName', encrypt('testpw'), error => { if (error) { console.log("Debug1 failed", error.message); } else { console.log("Debug1 entered"); }});
+//     db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName', encrypt('testpw'), error => { if (error) { console.log("Debug1 failed", error.message); } else { console.log("Debug1 entered"); }});
 
-    db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName2', encrypt('wptset'), error => { if (error) { console.log("Debug2 failed", error.message); } else { console.log("Debug2 entered"); }});
+//     db.run("INSERT INTO Users (uname, pw) VALUES (?, ?)", 'TestName2', encrypt('wptset'), error => { if (error) { console.log("Debug2 failed", error.message); } else { console.log("Debug2 entered"); }});
 
-    db.run("INSERT INTO Auth (uname, auth_token) VALUES (?, ?)", 'TestName', crypto.randomBytes(20).toString('hex'), error => { if (error) { console.log("Debug3 failed", error.message); } else { console.log("Debug3 entered"); }});
+//     db.run("INSERT INTO Auth (uname, auth_token) VALUES (?, ?)", 'TestName', crypto.randomBytes(20).toString('hex'), error => { if (error) { console.log("Debug3 failed", error.message); } else { console.log("Debug3 entered"); }});
 
-    db.run("INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)", 'TestName', 'TestName2', encrypt('test message here'), error => { if (error) { console.log("Debug4 failed", error.message); } else { console.log("Debug4 entered"); }});
+//     db.run("INSERT INTO Drops (src, dest, msg) VALUES (?, ?, ?)", 'TestName', 'TestName2', encrypt('test message here'), error => { if (error) { console.log("Debug4 failed", error.message); } else { console.log("Debug4 entered"); }});
 
   } else {
     console.log("Database ready to go!");
@@ -79,7 +79,7 @@ const keyPair = crypto.generateKeyPairSync('rsa', {
 
 app.post("/v1/register", (req, res) => {
   // call to register a new account
-  // req.body.username req.body.password
+  // req.body.username req.body.password, req.body.publickey
 
   // TODO: uncomment this once encryption is built into client
   // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
@@ -87,19 +87,20 @@ app.post("/v1/register", (req, res) => {
 
   const cliUser = req.body.username;
   const cliPw = req.body.password;
+  const cliKey = req.body.publickey;
 
-  if (!cliUser || !cliPw) {
+  if (!cliUser || !cliPw || !cliKey) {
     res.status(400).json({ error: 'missing parameters' });
     console.log("Respond 401 due to missing parameters");
     return;
   }
 
   // always store passwords as encrypted strings
-  let sql = "INSERT INTO Users (uname, pw) VALUES (?, ?)";
-  db.run(sql, cliUser, encrypt(cliPw), err => {
+  let sql = "INSERT INTO Users (uname, pw, key) VALUES (?, ?, ?)";
+  db.run(sql, cliUser, encrypt(cliPw), cliKey, err => {
     if (err) {
       res.status(401).json({ error: 'username taken' });
-      console.log("Respond 401 due to taken username");
+      console.log("Respond 401 due to taken username |", err.message);
       return;
 
     } else {
@@ -463,6 +464,59 @@ app.get("/v1/fetchkey", (req, res) => {
   res.status(200).json( {publicKey: keyPair.publicKey });
   console.log("Respond 200 with key attached");
   return;
+});
+
+app.get("/v1/getUserKey", (req, res) => {
+  // call to retrieve public key
+  // req.body.auth_token, req.body.username, req.body.dest
+
+  // TODO: uncomment this once encryption is built into client
+  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  console.log("Received request to '/v1/getUserKey': ", req.body);
+
+  let cliToken = req.body.auth_token;
+  let cliUser = req.body.username;
+  let cliDest = req.body.dest;
+
+  if (!cliToken || !cliUser || !cliDest) {
+    res.status(400).json({ error: 'missing parameters' });
+    console.log("Respond 401 due to missing parameters");
+    return;
+  }
+
+  // check authentication
+  let sql = "SELECT uname FROM Auth WHERE auth_token  = ? AND expires > datetime('now') AND uname = ?";
+  db.get(sql, [cliToken, cliUser], (err, row) => {
+    if (err) {
+      res.status(500).json({ error: 'server error' });
+      console.log("Respond 500 due to SELECT error:", err.message);
+      return;
+
+    } else {
+      if (row) {
+        console.log("User has been authenticated:", row.uname);
+
+        let sql = "SELECT key FROM Users WHERE uname = ?";
+        db.get(sql, cliDest, (error, row) => {
+          console.log("row:", row);
+          if (error) {
+            res.status(500).json({ error: 'server error' });
+            console.log("Respond 500 due to SELECT error:", error.message);
+            return;
+
+          } else {
+            res.status(200).json({ key: row.key });
+            console.log("Respond 200 with public key for user:", cliDest, row.key);
+            return;
+          }
+        });
+
+      } else {
+        res.status(401).json({ error: 'bad auth_token' });
+        console.log("Respond 401 due to bad auth_token");
+      }
+    }
+  });
 });
 
 /////////////////
