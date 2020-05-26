@@ -3,11 +3,18 @@
 **/
 "use strict";
 
+var XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest;
+
 const server_url = "https://project153-server.glitch.me/";
 
 /**
     function to call when user wants to send a '/register' POST request to server to register for an account
 **/
+
+//register();
+//login();
+
+
 function register()
 {
     
@@ -18,24 +25,26 @@ function register()
     //TODO: check if username is taken
     var name = "temp_name";
     var password = "temp_password";
+    var publickey = "temp_publickey"
     
     var jsonObj = 
     {
         username: name,
-        password: password
+        password: password,
+        publickey: publickey
     }
     
     var xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(jsonString);
     
     xhr.onloadend = function(e) {
-         console.log(xhr.responseText);
+        
+         console.log("response came back in register(): ",xhr.responseText);
     }
     
     
-    xhr.send(jsonObj);
+    xhr.send(JSON.stringify(jsonObj));
 }
 
 /**
@@ -61,14 +70,14 @@ function login()
     var xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(jsonString);
+    
     
     xhr.onloadend = function(e) {
-         console.log(xhr.responseText);
+         console.log("response came back in login(): ",xhr.responseText);
     }
     
     
-    xhr.send(jsonObj);
+    xhr.send(JSON.stringify(jsonObj));
 }
 
 /**
@@ -93,14 +102,14 @@ function send()
     var xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(jsonString);
+   
     
     xhr.onloadend = function(e) {
          console.log(xhr.responseText);
     }
     
     
-    xhr.send(jsonObj);
+    xhr.send(JSON.stringify(jsonObj));
 }
 
 /** 
@@ -124,14 +133,14 @@ function deleteMsg()
     var xhr = new XMLHttpRequest();
     xhr.open("POST", url);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(jsonString);
+   
     
     xhr.onloadend = function(e) {
          console.log(xhr.responseText);
     }
     
     
-    xhr.send(jsonObj);
+    xhr.send(JSON.stringify(jsonObj));
 }
 
 /**
@@ -152,13 +161,13 @@ function receive()
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url);
     xhr.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-    xhr.send(jsonString);
+    
     
     xhr.onloadend = function(e) {
          console.log(xhr.responseText);
     }
     
     
-    xhr.send(jsonObj);
+    xhr.send(JSON.stringify(jsonObj));
     
 }
