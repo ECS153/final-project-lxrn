@@ -67,8 +67,8 @@
     4. PRs committed and/or design docs worked on
 
 2. Haocheng Xue
-    1. What I did last week
-    2. What I'll do this week
+    1. worked on client side, implemented RSA encrypted group chat and private chat, login, adding friends
+    2. continue to work on client side, fix bugs
     3. What I'm stuck on
     4. PRs committed and/or design docs worked on
 
@@ -79,9 +79,9 @@
     4. PRs committed and/or design docs worked on
 
 4. Jed Nugal
-    1. What I did last week
-    2. What I'll do this week
-    3. What I'm stuck on
+    1. CSS/layout of chat client, making elements more dynamic according to browser window size, identifying bugs
+    2. help more with client side, work on layout
+    3. confused about how we are linking our work together
     4. PRs committed and/or design docs worked on
 
 5. [TODO: Video link](milestones.md)
