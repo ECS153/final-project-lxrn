@@ -58,7 +58,7 @@
 
 5. [Video link](https://drive.google.com/open?id=1ddnE0LPiPqkJf9_NesjXt_z-6BpY8V6D)
 
-## Milestone 3
+## Milestone 3 - 5/26/20
 
 1. Nico Lupacchino
     1. What I did last week
@@ -73,10 +73,10 @@
     4. PRs committed and/or design docs worked on
 
 3. Brody Reeves
-    1. What I did last week
-    2. What I'll do this week
-    3. What I'm stuck on
-    4. PRs committed and/or design docs worked on
+    1. Add more layers of encryption, started demo/threat model (delayed for other class projects)
+    2. Finish tasks mentioned above
+    3. Need to figure out what's going on with client-side
+    4. [PR#30](https://github.com/ECS153/final-project-lxrn/pull/30)
 
 4. Jed Nugal
     1. CSS/layout of chat client, making elements more dynamic according to browser window size, identifying bugs
