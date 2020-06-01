@@ -84,8 +84,7 @@
     3. confused about how we are linking our work together
     4. PRs committed and/or design docs worked on
 
-5. [demonstration for milestone 3](https://youtu.be/0MkPZGcI054)
-
+5. [demonstration for milestone 3](https://youtu.be/0MkPZGcI054), [presentation video](https://drive.google.com/open?id=1HjOFxGtvCKp3wdHuuVd-F_zzFCa2EZ7E)
 ---
 
 [Link to this file](milestones.md)
