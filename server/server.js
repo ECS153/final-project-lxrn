@@ -81,8 +81,7 @@ app.post("/v1/register", (req, res) => {
   // call to register a new account
   // req.body.username req.body.password, req.body.publickey
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/register': ", req.body);
 
   const cliUser = req.body.username;
@@ -128,8 +127,7 @@ app.post("/v1/login", (req, res) => {
   // call to log into an account
   // req.body.username req.body.password
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/login': ", req.body);
 
   const cliUser = req.body.username;
@@ -191,8 +189,7 @@ app.post("/v1/send", (req, res) => {
   // call to send a message
   // req.body.auth_token, , req.body.dest, req.body.msg, (optional)req.body.expires
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/send': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -289,8 +286,7 @@ app.get("/v1/receive", (req, res) => {
   // call to receive messages for user with auth_token in field
   // req.body.auth_token
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/receive': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -353,8 +349,7 @@ app.post("/v1/delete", (req, res) => {
   // call to delete messages
   // req.body.auth_token, req.body.src, req.body.dest, req.body.sent
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/delete': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -407,8 +402,7 @@ app.post("/v1/logout", (req, res) => {
   // call to log out a user
   // req.body.auth_token, req.body.username
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/logout': ", req.body);
 
   let cliToken = req.body.auth_token;
@@ -457,8 +451,7 @@ app.post("/v1/logout", (req, res) => {
 app.get("/v1/fetchkey", (req, res) => {
   // call to retrieve public key
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/fetchkey': ", req.body);
 
   res.status(200).json( {publicKey: keyPair.publicKey });
@@ -470,8 +463,7 @@ app.get("/v1/getUserKey", (req, res) => {
   // call to retrieve public key
   // req.body.auth_token, req.body.username, req.body.dest
 
-  // TODO: uncomment this once encryption is built into client
-  // req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
+  req.body = JSON.parse(privateDecrypt(req.body)); // server would call this on the incoming request.body
   console.log("Received request to '/v1/getUserKey': ", req.body);
 
   let cliToken = req.body.auth_token;
