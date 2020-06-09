@@ -6,6 +6,7 @@
 - [**Milestones**](milestones.md)
 - [**Design Docs**](design_docs.md)
 - [**Google Drive**](https://drive.google.com/open?id=12eML4aF5LIa-0_87SsUrtAZS582Y56-y) (View Only)
+- [**Final Project Slides**](https://drive.google.com/file/d/155IYmjHrW5lcW1E3oU3CJuWzdh2xjPU9/view?usp=sharing)
 
 ---
 
