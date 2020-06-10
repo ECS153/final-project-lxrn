@@ -1,7 +1,7 @@
 # ECS 153 Final Project Repo
 
 ## Team: S20-lxrn
-
+## Members: Brody Reeves,Jed Mandy Nugal,Nico Lupacchino,Haocheng Xue
 - [**Proposal**](proposal.md)
 - [**Milestones**](milestones.md)
 - [**Design Docs**](design_docs.md)
